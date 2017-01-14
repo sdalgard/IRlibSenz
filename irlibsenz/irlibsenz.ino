@@ -1,5 +1,8 @@
 
 #include <stdarg.h>
+#include "IRLibSendBase.h"
+#include "IRLib_P01_NEC.h"
+IRsendNEC mySender;
 
 void printf_serial(char *fmt, ... ){
         char buf[512]; // resulting string limited to 512 chars
@@ -11,102 +14,185 @@ void printf_serial(char *fmt, ... ){
         Serial.print(buf);
 }
 
-#include "IRLibSendBase.h"
-#include "IRLib_P01_NEC.h"
-IRsendNEC mySender;
+void send_command(int cmd_char) {    
+  uint32_t cmd_code = -1;
+  int   delay_time = 150;
+  switch (cmd_char) {
+    case '1':
+      printf_serial("Send 1\n");
+      cmd_code = 0x00FF906F;
+      break;
+    case '2':
+      printf_serial("Send 2\n");
+      cmd_code = 0x00FFB847;
+      break;
+    case '3':
+      printf_serial("Send 3\n");
+      cmd_code = 0x00FFF807;
+      break;
+    case '4':
+      printf_serial("Send 4\n");
+      cmd_code = 0x00FF9867;
+      break;
+    case '5':
+      printf_serial("Send 5\n");
+      cmd_code = 0x00FFD827;
+      break;
+    case '6':
+      printf_serial("Send 6\n");
+      cmd_code = 0x00FFB24D;
+      break;
+    case '7':
+      printf_serial("Send 7\n");
+      cmd_code = 0x00FF28D7;
+      break;
+    case '8':
+      printf_serial("Send 8\n");
+      cmd_code = 0x00FF12ED;
+      break;
+    case '9':
+      printf_serial("Send 9\n");
+      cmd_code = 0x00FF2AD5 ;
+      break;
+    case 'o':
+      printf_serial("Send onoff\n");
+      cmd_code = 0x00FF08F7;
+      break;
+    case '+':
+      printf_serial("Send +\n");
+      cmd_code = 0x00FF00FF;
+      delay_time = 100;
+      break;
+    case '-':
+      printf_serial("Send -\n");
+      cmd_code = 0x00FF58A7;
+      delay_time = 100;
+      break;
+    case 'a':
+      printf_serial("Send Alarm\n");
+      cmd_code = 0x00FFC03F;
+      break;
+    case 'i':
+      printf_serial("Send Info\n");
+      cmd_code = 0x00FF6897;
+      break;
+  }
+  if (cmd_code != -1) {
+    mySender.send(cmd_code); 
+    delay(delay_time);
+  }
+
+  //  mySender.send(0x00FFA857); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  stjerne
+  //  mySender.send(0x00FF48B7); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  10
+  //  mySender.send(0x00FFA05F); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  eq
+  //  mySender.send(0x00FF609F); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  scan
+  //  mySender.send(0x00FF20DF); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  menu
+  //  mySender.send(0x00FFB04F); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  Mode
+  //  mySender.send(0x00FF30CF); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  Mute
+  //  mySender.send(0x00FF7887); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  OK
+  //  mySender.send(0x00FF708F); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  høyre
+  //  mySender.send(0x00FF50AF); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  venstre
+  //  mySender.send(0x00FF40BF); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  lys}
+}
 
 
 
+int inChar;
+int lastEncode = -1;
+typedef enum {UP, DOWN, UNDEF} direction_t;
+direction_t lastDirection = UNDEF;
+int volCount = 0;
+const byte encodeAPin = 2;
+const byte encodeBPin = 4;
+volatile byte state = LOW;
 
 // the setup routine runs once when you press reset:
 void setup() {
   // initialize serial communication at 9600 bits per second:
   Serial.begin(115200);
-  
-  
+  pinMode(encodeAPin, INPUT_PULLUP);
+  pinMode(encodeBPin, INPUT_PULLUP);
 } // the setup function runs once when you press reset or power the board
 
 // the loop routine runs over and over again forever:
 void loop() {
-  delay(2000);
-  printf_serial("Hello %d\n", 42);
-
-  delay(2000);
-  printf_serial("Send Info\n");
-  mySender.send(0x00FF6897); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  Info
-  delay(2000);
-  printf_serial("Send Alarm\n");
-  mySender.send(0x00FFC03F); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  alarm
-  delay(2000);
-  printf_serial("Send Stjerne\n");
-  mySender.send(0x00FFA857); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  stjerne
-  delay(2000);
-  printf_serial("Send 10\n");
-  mySender.send(0x00FF48B7); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  10
-  delay(2000);
-  printf_serial("Send Eq\n");
-  mySender.send(0x00FFA05F); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  eq
-  delay(2000);
-  printf_serial("Send Scan\n");
-  mySender.send(0x00FF609F); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  scan
-  delay(2000);
-  printf_serial("Send Menu\n");
-  mySender.send(0x00FF20DF); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  menu
-  delay(2000);
-  printf_serial("Send Mode\n");
-  mySender.send(0x00FFB04F); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  Mode
-  delay(2000);
-  printf_serial("Send Mute\n");
-  mySender.send(0x00FF30CF); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  Mute
-  delay(2000);
-  printf_serial("Send OK\n");
-  mySender.send(0x00FF7887); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  OK
-  delay(2000);
-  printf_serial("Send høyre\n");
-  mySender.send(0x00FF708F); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  høyre
-  delay(2000);
-  printf_serial("Send venstre\n");
-  mySender.send(0x00FF50AF); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  venstre
-  delay(2000);
-  printf_serial("Send lys\n");
-  mySender.send(0x00FF40BF); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  lys
-  delay(2000);
-  printf_serial("Send -\n");
-  mySender.send(0x00FF58A7); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  -
-  delay(2000);
-  printf_serial("Send +\n");
-  mySender.send(0x00FF00FF); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  +
-  delay(2000);
-  printf_serial("Send onoff\n");
-  mySender.send(0x00FF08F7); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  onoff
-  delay(2000);
-  printf_serial("Send 9\n");
-  mySender.send(0x00FF2AD5); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  9
-  delay(2000);
-  printf_serial("Send 8\n");
-  mySender.send(0x00FF12ED); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  8
-  delay(2000);
-  printf_serial("Send 7\n");
-  mySender.send(0x00FF28D7); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  7
-  delay(2000);
-  printf_serial("Send 6\n");
-  mySender.send(0x00FFB24D); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  6
-  delay(2000);
-  printf_serial("Send 5\n");
-  mySender.send(0x00FFD827); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  5
-  delay(2000);
-  printf_serial("Send 4\n");
-  mySender.send(0x00FF9867); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  4
-  delay(2000);
-  printf_serial("Send 3\n");
-  mySender.send(0x00FFF807); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  3
-  delay(2000);
-  printf_serial("Send 2\n");
-  mySender.send(0x00FFB847); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  2
-  delay(2000);
-  printf_serial("Send 1\n");
-  mySender.send(0x00FF906F); //AnalysIR Batch Export (IRLib) // AnalysIR IR Protocol: NEC, Key:  1
-
+  int newEncode = 0;
+  direction_t newDirection = UNDEF;
+  
+  if (Serial.available() > 0) {
+    // read the incoming byte:
+    inChar = Serial.read();
+    send_command(inChar);
+  }
+  
+  newEncode |= digitalRead(encodeAPin); 
+  newEncode <<=1;
+  newEncode |= digitalRead(encodeBPin); 
+  if (lastEncode != newEncode) {
+    
+    switch (lastEncode) {
+      case 0:
+        switch (newEncode) {
+          case 1:
+            newDirection = UP;
+            break;
+          case 2:
+            newDirection = DOWN;
+            break;
+        }
+        break;
+      case 1:
+        switch (newEncode) {
+          case 3:
+            newDirection = UP;
+            break;
+          case 0:
+            newDirection = DOWN;
+            break;
+        }
+        break;
+      case 3:
+        switch (newEncode) {
+          case 2:
+            newDirection = UP;
+            break;
+          case 1:
+            newDirection = DOWN;
+            break;
+        }
+        break;
+      case 2:
+        switch (newEncode) {
+          case 0:
+            newDirection = UP;
+            break;
+          case 3:
+            newDirection = DOWN;
+            break;
+        }
+        break;
+    }
+    if (newDirection != UNDEF) {
+      if (lastDirection == newDirection) {
+        if (newDirection == UP) {
+          volCount +=3;
+          send_command('+');
+          send_command('+');
+          send_command('+');
+        } else {
+          volCount -=3;
+          send_command('-');
+          send_command('-');
+          send_command('-');
+        }
+        lastDirection = UNDEF;
+        printf_serial("New encode %d vol %d\n", newEncode, volCount);
+      } else {
+        lastDirection = newDirection;
+      }
+    }
+    lastEncode = newEncode;
+  }
 }
 
 
