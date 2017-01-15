@@ -3,6 +3,8 @@
 #include "IRLibSendBase.h"
 #include "IRLib_P01_NEC.h"
 IRsendNEC mySender;
+//#include "IRLib_P07_NECx.h"
+//IRsendNECx mySender;
 
 void printf_serial(char *fmt, ... ){
         char buf[512]; // resulting string limited to 512 chars
@@ -14,9 +16,10 @@ void printf_serial(char *fmt, ... ){
         Serial.print(buf);
 }
 
-void send_command(int cmd_char) {    
+void send_command(int cmd_char, int repeat = 0) {    
   uint32_t cmd_code = -1;
   int   delay_time = 150;
+  int   repeat_time = 150;
   switch (cmd_char) {
     case '1':
       printf_serial("Send 1\n");
@@ -57,16 +60,17 @@ void send_command(int cmd_char) {
     case 'o':
       printf_serial("Send onoff\n");
       cmd_code = 0x00FF08F7;
+      delay_time = 6000;
       break;
     case '+':
       printf_serial("Send +\n");
       cmd_code = 0x00FF00FF;
-      delay_time = 100;
+      repeat_time = 100;
       break;
     case '-':
       printf_serial("Send -\n");
       cmd_code = 0x00FF58A7;
-      delay_time = 100;
+      repeat_time = 100;
       break;
     case 'a':
       printf_serial("Send Alarm\n");
@@ -79,6 +83,12 @@ void send_command(int cmd_char) {
   }
   if (cmd_code != -1) {
     mySender.send(cmd_code); 
+    while (repeat > 0) {
+      delay(repeat_time);
+      printf_serial(".\n");
+      mySender.send(cmd_code);
+      repeat--; 
+    }    
     delay(delay_time);
   }
 
@@ -176,14 +186,10 @@ void loop() {
       if (lastDirection == newDirection) {
         if (newDirection == UP) {
           volCount +=3;
-          send_command('+');
-          send_command('+');
-          send_command('+');
+          send_command('+', 2);
         } else {
           volCount -=3;
-          send_command('-');
-          send_command('-');
-          send_command('-');
+          send_command('-', 2);
         }
         lastDirection = UNDEF;
         printf_serial("New encode %d vol %d\n", newEncode, volCount);
